@@ -22,28 +22,35 @@ class HTMLCourseParser:
         current_shift = Shift('None')
         for tr in rows:
             tds = tr.find_all('td')
-            
             shift_name = str(tds[0].contents[0].strip())
             shift_time = str(tds[2].contents[0].encode("cp1252").strip())
 
             day        = parse_day(shift_time[0:3])
             start      = parse_time(shift_time[5:10])
             end        = parse_time(shift_time[13:18])
-            room       = str(tds[3].a.contents[0].encode("cp1252").strip()) \
-                           if tds[3].find_all('a') else ""
+            try:
+                room       = str(tds[3].a.contents[0].encode("cp1252").strip()) \
+                            if tds[3].find_all('a') else ""
+            except IndexError:
+                room = "-"
 
+            classes = ""
+            for i in range(0, len(tds[4].contents), 2):
+                classes += str(tds[4].contents[i]).strip()+ " "
             
             if shift_name != current_shift.name:   # new shift
                 current_shift = Shift(shift_name)
                 shifts.append(current_shift)
 
             current_shift.add_lesson_slot( \
-                LessonSlot(day, start, end, room))
+                LessonSlot(day, start, end, room, classes))
 
 
         blocks = {}
         for shift in shifts:
             category = extract_category(course.name, shift.name)
+            if not category:
+                continue
             if not category in blocks.keys():
                 blocks[category] = LessonBlock(category)
             blocks[category].add_shift(shift)
@@ -51,7 +58,8 @@ class HTMLCourseParser:
             course.add_lesson_block(block)
 
         course.name = course.lesson_blocks[0].shifts[0].name[:len(course.name)]
-        course.long_name = soup.body.find('h2').contents[0].encode("utf-8").strip()
+        course.long_name = soup.body.find('h2').contents[0].contents[0].encode("utf-8").strip()
+        course.url = self.url[:-7]
 
         return course
 

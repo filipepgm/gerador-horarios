@@ -29,26 +29,27 @@ class HTMLPrettyPrinter:
                    for y in xrange(6)]
 
         # fill out the content according to the lesson slots
-        for slot in timetable.lessons:
-            day_i = slot.day
-            start_i = time_index(slot.start)
-            end_i = time_index(slot.end)
+        for weekday in range(Weekday.MONDAY, Weekday.SUNDAY):
+            for slot in timetable.lessons[weekday]:
+                day_i = slot.day
+                start_i = time_index(slot.start)
+                end_i = time_index(slot.end)
 
-            content[day_i][start_i] = "class='period-first-slot' "
-            content[day_i][end_i-1] = "class='period-last-slot' "
-            for time_i in xrange(start_i+1, end_i-1):
-                content[day_i][time_i] = "class='period-middle-slot' "
+                content[day_i][start_i] = "class='period-first-slot' "
+                content[day_i][end_i-1] = "class='period-last-slot' "
+                for time_i in xrange(start_i+1, end_i-1):
+                    content[day_i][time_i] = "class='period-middle-slot' "
 
-            for time_i in xrange(start_i, end_i):
-                content[day_i][time_i] += "style='background-color: %s'  " \
-                                          % (self.color(slot.course_name()))
-                content[day_i][time_i] += "headers='weekday%i hour%i'  " \
-                                          % (day_i, time_i)
-                content[day_i][time_i] += "title='%s-%s'> " \
-                                          % (slot.start, slot.end)
+                for time_i in xrange(start_i, end_i):
+                    content[day_i][time_i] += "style='background-color: %s'  " \
+                                              % (self.color(slot.course_name()))
+                    content[day_i][time_i] += "headers='weekday%i hour%i'  " \
+                                              % (day_i, time_i)
+                    content[day_i][time_i] += "title='%s-%s&#013;%s'> " \
+                                              % (slot.start, slot.end, slot.classes)
 
-            content[day_i][start_i] += "%s&nbsp;&nbsp;(%s)&nbsp;%s" \
-                                       % (slot.course_name(), slot.lesson_category(), slot.room)
+                content[day_i][start_i] += "%s&nbsp;%s&nbsp;(%s)&nbsp;%s" \
+                                           % (slot.course_name(), slot.parent_shift.name[-2:], slot.lesson_category(), slot.room)
 
         # format the HTML for the timetable
         html_result = [table_intro(table_id)]
@@ -114,6 +115,16 @@ def intro(total_selected, total_combinations):
         showTable(current);
         updateLabel();
       }
+      
+      function handleKeyPress(event) {
+        if (event.keyCode == 39) 
+            { goRight();}
+        else if(event.keyCode == 37) 
+            {goLeft();}
+        console.log("key");
+      }
+      
+      document.addEventListener("keydown", handleKeyPress);
     </script>
   </head>
   <body>

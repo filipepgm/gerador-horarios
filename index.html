@@ -3,71 +3,91 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <title>Gerador de Horários Compactos</title>
-    <link rel='stylesheet' type='text/css' media='screen' href='https://fenix.tecnico.ulisboa.pt/cursos/meic-a/static/css/publicPages.css' />
     <link rel='stylesheet' type='text/css' media='screen' href='main.css' />
-    <script type="text/javascript">
-	  var courseCount = 0;
-	  
-      function showErrorMessage() { document.getElementById("errorMessage").style.visibility = "visible" }
-      function hideErrorMessage() { document.getElementById("errorMessage").style.visibility = "hidden" }
-      
-	  function processCourseURL() {
-        if (courseURL.value == '')
-          return
-        
-	    var xmlhttp = new XMLHttpRequest();
-        xmlhttp.onreadystatechange = function() {
-		  if (xmlhttp.readyState==4 && xmlhttp.status==200) {
-            if (xmlhttp.responseText == '')
-              showErrorMessage();
-            else {
-              hideErrorMessage();
-              document.getElementById("courseURL").value = "";
-		      document.getElementById("courses").innerHTML += xmlhttp.responseText;
-            }
-		  }
-		}
-		
-		courseCount++;
-		var encodedURL = encodeURIComponent(document.getElementById("courseURL").value);
-		xmlhttp.open("POST", "process_course_url.php", true);
-		xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
-		xmlhttp.send("course_id="+courseCount + "&url="+encodedURL);
-	  }
-      
-      function removeCourse(course) { course.innerHTML = "" }
-	</script>
+    <script src="course.js"></script>
+    <script src="filter.js"></script>
   </head>
-  <body style="margin:15px">
-        <h2 style="font-family:'Verdana';font-size:16px">
-          <b> Gerador de Horários Compactos </b>
+  <body>
+        <h2>
+            <b> Gerador de Horários Compactos <span style="color:red">BETA</span></b>
         </h2>
-        <br>
         
-        <div class="mtop1 coutput2" style="line-height: 1.5em;font-family:'Verdana';font-size:12px">
-        <ul>
-          <li>Introduza o URL de cada disciplina no formulário abaixo e prima o botão [+].</li>
-              (e.g. para Álgebra Linear - LEIC-A, introduza <i>https://fenix.tecnico.ulisboa.pt/disciplinas/AL425/2014-2015/1-semestre</i>)
-          <li>Pode de seguida escolher os tipos de aula a incluir no horário (i.e. teóricas, laboratórios, etc).</li>
-          <li>Para terminar, prima [Submit].</li>
-        </ul>
+        <div class="description">
+            <ul>
+              <li>Introduza o URL de cada disciplina no formulário abaixo e prima o botão [Adicionar].</li>
+                  (e.g. para Álgebra Linear - LEIC-A, introduza <i>https://fenix.tecnico.ulisboa.pt/disciplinas/AL425/2014-2015/1-semestre</i>)
+              <li>Pode de seguida escolher os tipos de aula a incluir no horário (i.e. teóricas, laboratórios, etc).</li>
+              <li>Pode aplicar filtros para limitar os horários gerados (i.e. limites de horas, dias livres, etc).</li>
+              <li>Para terminar, prima [Submeter].</li>
+            </ul>
         </div>
-        <br>
         
-        <div id='errorMessage' style="font-family:'Verdana';color:#DD0000;visibility:hidden">Ocorreu um erro na obtenção da disciplina. É possível que o URL esteja mal formado.</div>
+        <div id='errorMessage'>Ocorreu um erro na obtenção da disciplina. É possível que o URL esteja mal formado.</div>
         
-        <form action="generate_timetables.php" method="post">
-          <p style="font-family:'Verdana'">
-            URL: <input type="text" id="courseURL" value="" size="80px" onkeypress="if (event.keyCode == 13) { processCourseURL(); return false; }" >
-            <button type="button" onclick="processCourseURL()">+</button>
-            <input type="submit" value="Submit">
-          </p>
-          <div id="courses">
-            <!-- html is inserted here -->
-          </div>
+        <form target="_blank" action="generate_timetables.php" method="post">
+            <div class="separator" id="FilterDiv">
+                <span id="FilterInput">
+                    <h4>Filtros: </h4>
+                    <button type="button" onclick="filterStart()">Criar Filtro</button>
+                    <p id="FilterSelect1" style="display:none">
+                        <select id="FilterType" onchange="changeFilterOptions()">
+                          <option value="ULimit">Hora M&aacute;xima</option>
+                          <option value="LLimit">Hora M&iacute;nima</option>
+                          <option value="Interval">Intervalo</option>
+                          <option value="FreeDay">Dia Livre</option>
+                        </select>
+                        
+                        <span  id="FilterOptions" >
+                            <span id="TimeLimit" class="OptionSet" style="display:inline">
+                              : <input type="time" onchange="FilterSelectType()" >
+                            </span>
+                            <span id="Interval" class="OptionSet" style="display:none">
+                              : Duração: <input type="time">  Entre as: <input type="time">  e as: <input type="time" onchange="FilterSelectType()">
+                            </span>
+                        </span>
+                    </p>
+                    <p id="FilterSelect2" style="display:none">
+                        <select id="FilterScope" onchange="changeFilterScopeOptions()">
+                          <option value="ChosenDays">Nos dias</option>
+                          <option value="nDays">Em x dias</option>
+                        </select>
+                        <span  id="ScopeOptions" >
+                            <span id="chosenDays" class="OptionSet" style="">
+                              : Seg<input type ="checkbox" onchange="FilterSelectTime()"> Ter<input type ="checkbox" onchange="FilterSelectTime()"> Qua<input type ="checkbox" onchange="FilterSelectTime()"> Qui<input type ="checkbox" onchange="FilterSelectTime()"> Sex<input type ="checkbox" onchange="FilterSelectTime()"> Sab<input type ="checkbox" onchange="FilterSelectTime()">
+                            </span>
+                            <span id="numberDays" class="OptionSet" style="display:none">
+                              : Em <input type="number" min="1" max="6" onchange="FilterSelectTime()"> dias
+                              <span class="note"> de segunda a sábado (6 dias)</span>
+                            </span>
+                        </span>
+                    </p>
+                    <button  id="FilterSelect3" type="button" onclick="processFilter()" style="display:none">Adicionar</button>
+                </span>
+                <div id="filters">
+                        <!-- html is inserted here -->
+                    </div>
+            </div>
+            <div class="separator" id="CourseDiv">
+                <h4>
+                Disciplinas:
+                </h4>
+                <p>
+                    URL: <input type="text" id="courseURL" value="" size="80px" onkeypress="if (event.keyCode == 13) { processCourseURL(); return false; }" >
+                    <button type="button" onclick="processCourseURL()">Adicionar</button>
+                </p>
+                <div id="courses">
+                    <!-- html is inserted here -->
+                </div>
+            </div>
+            
+            <div id="submit">
+                <input type="submit" value="Submeter">
+            </div>
         </form>
-
-        <div id="footer" class="mtop1 coutput2" style="line-height: 4em;font-family:'Verdana';font-size:10px">
+        
+        <div class="filler"> </div>
+        
+        <div id="footer" >
             Copyright &copy 2013-2015 Pedro P. Ramos
         </div>
         
